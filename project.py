@@ -1,5 +1,7 @@
 import pandas as pd
 from sklearn.linear_model import SGDClassifier
+from sklearn.linear_model import SGDClassifier
+from sklearn.svm import SVC
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction.text import CountVectorizer
@@ -10,11 +12,15 @@ import numpy as np
 from collections import Counter
 from gensim.utils import tokenize
 from gensim.parsing import preprocessing
-
+# from nltk import word_tokenize
+# from nltk.stem import PorterStemmer
+# from nltk.stem import WordNetLemmatizer
+from sklearn.model_selection import GridSearchCV
 ##################################
 sys.path.insert(0,'../..')
 from my_evaluation import my_evaluation
 from my_GA import my_GA
+
 
 
 class my_model():
@@ -60,19 +66,22 @@ class my_model():
 
         tokenizer = lambda x: tokenize(x, lowercase=True) #gensim tokenizer
 
-        #strip tags first, the punctiation, then non alphanum, then remove white space
+        #strip tags first, then punctiation, then non alphanum, then remove white space
         description = list(X_sample['Feature Request Text'])
         description = [preprocessing.strip_tags(d) for d in description]
         description = [preprocessing.strip_punctuation(d) for d in description]
+        description = [preprocessing.remove_stopwords(d) for d in description]
         description = [preprocessing.strip_non_alphanum(d) for d in description]
         description = [preprocessing.strip_multiple_whitespaces(d) for d in description]
+        description = [preprocessing.stem_text(d) for d in description]
 
 
 
-        sub_tf = True
+        sub_tf = False
 
-        count_vect_description = CountVectorizer(tokenizer=tokenizer, stop_words=None, strip_accents = None)
+        count_vect_description = CountVectorizer(tokenizer=tokenizer, stop_words='english', strip_accents = 'unicode')
         X_description_counts = count_vect_description.fit_transform(description)
+
         self.count_vect_description = count_vect_description
 
         tfidf_transformer_description = TfidfTransformer(sublinear_tf=sub_tf)
@@ -82,9 +91,29 @@ class my_model():
         X_description = X_description_tfidf.todense()
 
         X_rest = np.zeros((len(y_sample), 1))
+
+        # This is if we WANT to normalize for length of description
         XX = np.concatenate((X_description, X_rest), axis = 1)
 
-        self.clf = SGDClassifier(loss = 'hinge', penalty = 'l2', alpha = 0.0001).fit(np.asarray(XX), y_sample)
+        # This is if we don't want to normalize for length of description
+        # XX = np.concatenate((X_description_counts.todense(), X_rest), axis = 1)
+
+        # self.clf = SGDClassifier(loss = 'hinge', penalty = 'l2', alpha = 0.0001).fit(np.asarray(XX), y_sample)
+
+
+        # param_grid = [{'C': [0.5,1,10,100], 
+        #        'gamma': ['scale', 1,.1,.01,.001,.0001], 
+        #        'kernel':['rbf']}]
+
+        # param_grid = [{'C': [1,10], 
+        #        'gamma': ['scale',.1,.001], 
+        #        'kernel':['rbf']}]
+        
+        # optimal_params = GridSearchCV(SVC(), param_grid, cv=2, scoring='accuracy', verbose=0)
+        # optimal_params.fit(np.asarray(XX), y_sample)
+        # print(optimal_params.best_params_)
+        self.clf = SVC(C=1,gamma=0.1,).fit(np.asarray(XX), y_sample)
+        
 
         return
 
@@ -96,16 +125,21 @@ class my_model():
         description = list(X_sample['Feature Request Text'])
         description = [preprocessing.strip_tags(d) for d in description]
         description = [preprocessing.strip_punctuation(d) for d in description]
+        description = [preprocessing.remove_stopwords(d) for d in description]
         description = [preprocessing.strip_non_alphanum(d) for d in description]
         description = [preprocessing.strip_multiple_whitespaces(d) for d in description]
+        description = [preprocessing.stem_text(d) for d in description]
 
-    
 
-
+        # This is if we WANT to normalize for length of description
         X_description_counts = self.count_vect_description.transform(description)
         X_description_tfidf = self.tfidf_transformer_description.transform(X_description_counts)
         X_description_tfidf.shape
         X_description = X_description_tfidf.todense()
+
+        # This is if we DON'T WANT to normalize for length of description
+        # X_description_counts = self.count_vect_description.transform(description)
+        # X_description = X_description_counts.todense()
 
 
 
