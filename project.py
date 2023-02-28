@@ -101,17 +101,17 @@ class my_model():
         # self.clf = SGDClassifier(loss = 'hinge', penalty = 'l2', alpha = 0.0001).fit(np.asarray(XX), y_sample)
 
 
-        # param_grid = [{'C': [0.5,1,10,100], 
-        #        'gamma': ['scale', 1,.1,.01,.001,.0001], 
-        #        'kernel':['rbf']}]
+        param_grid = [{'C': [0.5,1,10,100], 
+               'gamma': ['scale', 1,.1,.01,.001,.0001], 
+               'kernel':['rbf']}]
 
         # param_grid = [{'C': [1,10], 
         #        'gamma': ['scale',.1,.001], 
         #        'kernel':['rbf']}]
         
-        # optimal_params = GridSearchCV(SVC(), param_grid, cv=2, scoring='accuracy', verbose=0)
-        # optimal_params.fit(np.asarray(XX), y_sample)
-        # print(optimal_params.best_params_)
+        optimal_params = GridSearchCV(SVC(), param_grid, cv=4, scoring='accuracy', verbose=0)
+        optimal_params.fit(np.asarray(XX), y_sample)
+        print(optimal_params.best_params_)
         self.clf = SVC(C=1,gamma=0.1,).fit(np.asarray(XX), y_sample)
         
 
