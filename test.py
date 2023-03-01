@@ -6,6 +6,7 @@ sys.path.insert(0, '../..')
 from my_evaluation import my_evaluation
 from sklearn.model_selection import train_test_split
 
+#Testing
 def test(data):
     
     data_split = train_test_split(data, test_size=.2,train_size=.8)
