@@ -20,6 +20,7 @@ from sklearn.model_selection import GridSearchCV
 sys.path.insert(0,'../..')
 from my_evaluation import my_evaluation
 from my_GA import my_GA
+from skopt import BayesSearchCV, space
 
 
 
@@ -73,6 +74,8 @@ class my_model():
         description = [preprocessing.remove_stopwords(d) for d in description]
         description = [preprocessing.strip_non_alphanum(d) for d in description]
         description = [preprocessing.strip_multiple_whitespaces(d) for d in description]
+        description = [preprocessing.strip_numeric(d) for d in description]
+        description = [preprocessing.split_alphanum(d) for d in description]
         description = [preprocessing.stem_text(d) for d in description]
 
 
@@ -101,18 +104,22 @@ class my_model():
         # self.clf = SGDClassifier(loss = 'hinge', penalty = 'l2', alpha = 0.0001).fit(np.asarray(XX), y_sample)
 
 
-        param_grid = [{'C': [0.5,1,10,100], 
-               'gamma': ['scale', 1,.1,.01,.001,.0001], 
-               'kernel':['rbf']}]
-
-        # param_grid = [{'C': [1,10], 
-        #        'gamma': ['scale',.1,.001], 
+        #for grid search
+        # param_grid = [{'C': [0.5,1,10,100], 
+        #        'gamma': ['scale', 1,.1,.01,.001,.0001], 
         #        'kernel':['rbf']}]
+
+        # param_grid = {'C': space.Real(1,100), 
+        #        'gamma': space.Real(.0001,1)}
         
-        optimal_params = GridSearchCV(SVC(), param_grid, cv=4, scoring='accuracy', verbose=0)
-        optimal_params.fit(np.asarray(XX), y_sample)
-        print(optimal_params.best_params_)
-        self.clf = SVC(C=1,gamma=0.1,).fit(np.asarray(XX), y_sample)
+
+        # print('running Baysian Search')
+        # optimal_params = BayesSearchCV(SVC(), param_grid, cv=2, scoring='f1_micro', verbose=0)
+        # optimal_params.fit(np.asarray(XX), y_sample)
+        # print(optimal_params.best_params_)
+    
+
+        self.clf = SVC(C=1,gamma=0.3077, class_weight = 'balanced').fit(np.asarray(XX), y_sample)
         
 
         return
@@ -128,6 +135,8 @@ class my_model():
         description = [preprocessing.remove_stopwords(d) for d in description]
         description = [preprocessing.strip_non_alphanum(d) for d in description]
         description = [preprocessing.strip_multiple_whitespaces(d) for d in description]
+        description = [preprocessing.strip_numeric(d) for d in description]
+        description = [preprocessing.split_alphanum(d) for d in description]
         description = [preprocessing.stem_text(d) for d in description]
 
 
