@@ -12,15 +12,20 @@ import numpy as np
 from collections import Counter
 from gensim.utils import tokenize
 from gensim.parsing import preprocessing
-# from nltk import word_tokenize
-# from nltk.stem import PorterStemmer
-# from nltk.stem import WordNetLemmatizer
+from nltk import word_tokenize
+# import nltk
+# nltk.download()
+from nltk.stem import PorterStemmer
+from nltk.stem import WordNetLemmatizer
 from sklearn.model_selection import GridSearchCV
 ##################################
 sys.path.insert(0,'../..')
 from my_evaluation import my_evaluation
 from my_GA import my_GA
 from skopt import BayesSearchCV, space
+from symspellpy.symspellpy import SymSpell
+import pkg_resources
+#consider miss spelling using symspell
 
 
 
@@ -66,6 +71,13 @@ class my_model():
         y_sample = y   
 
         tokenizer = lambda x: tokenize(x, lowercase=True) #gensim tokenizer
+        wnl = WordNetLemmatizer()
+
+        # Set max_dictionary_edit_distance to avoid spelling correction
+        sym_spell = SymSpell(max_dictionary_edit_distance=0, prefix_length=7)
+        dictionary_path = pkg_resources.resource_filename("symspellpy", "frequency_dictionary_en_82_765.txt")
+        sym_spell.load_dictionary(dictionary_path, term_index=0, count_index=1)
+
 
         #strip tags first, then punctiation, then non alphanum, then remove white space
         description = list(X_sample['Feature Request Text'])
@@ -76,7 +88,16 @@ class my_model():
         description = [preprocessing.strip_multiple_whitespaces(d) for d in description]
         description = [preprocessing.strip_numeric(d) for d in description]
         description = [preprocessing.split_alphanum(d) for d in description]
+        description = [sym_spell.word_segmentation(d).corrected_string if len(d) > 0 else d for d in description]
+        description = [wnl.lemmatize(d) for d in description]
         description = [preprocessing.stem_text(d) for d in description]
+
+        #These are the steps the paper did exactly
+        # description = [preprocessing.strip_numeric(d) for d in description]
+        # description = [preprocessing.strip_punctuation(d) for d in description]
+        # description = [preprocessing.remove_stopwords(d) for d in description]
+        # description = [wnl.lemmatize(d) for d in description]
+        # description = [preprocessing.stem_text(d) for d in description]
 
 
 
@@ -119,7 +140,8 @@ class my_model():
         # print(optimal_params.best_params_)
     
 
-        self.clf = SVC(C=1,gamma=0.3077, class_weight = 'balanced').fit(np.asarray(XX), y_sample)
+        # self.clf = SVC(C=1,gamma=0.3077, class_weight = 'balanced').fit(np.asarray(XX), y_sample)
+        self.clf = SVC(C=1,gamma=0.3077).fit(np.asarray(XX), y_sample)
         
 
         return
@@ -127,6 +149,13 @@ class my_model():
     def predict(self, X):
         X_sample = X
 
+
+        wnl = WordNetLemmatizer()
+
+        # Set max_dictionary_edit_distance to avoid spelling correction
+        sym_spell = SymSpell(max_dictionary_edit_distance=0, prefix_length=7)
+        dictionary_path = pkg_resources.resource_filename("symspellpy", "frequency_dictionary_en_82_765.txt")
+        sym_spell.load_dictionary(dictionary_path, term_index=0, count_index=1)
 
         #strip tags first, the punctiation, then non alphanum, then remove white space
         description = list(X_sample['Feature Request Text'])
@@ -137,7 +166,16 @@ class my_model():
         description = [preprocessing.strip_multiple_whitespaces(d) for d in description]
         description = [preprocessing.strip_numeric(d) for d in description]
         description = [preprocessing.split_alphanum(d) for d in description]
+        description = [sym_spell.word_segmentation(d).corrected_string if len(d) > 0 else d for d in description]
+        description = [wnl.lemmatize(d) for d in description]
         description = [preprocessing.stem_text(d) for d in description]
+
+        #These are the steps the paper did exactly
+        # description = [preprocessing.strip_numeric(d) for d in description]
+        # description = [preprocessing.strip_punctuation(d) for d in description]
+        # description = [preprocessing.remove_stopwords(d) for d in description]
+        # description = [wnl.lemmatize(d) for d in description]
+        # description = [preprocessing.stem_text(d) for d in description]
 
 
         # This is if we WANT to normalize for length of description
